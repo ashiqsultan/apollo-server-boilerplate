@@ -1,15 +1,15 @@
 const { RESTDataSource } = require('apollo-datasource-rest');
+require('dotenv').config()
+
 
 class WeatherAPI extends RESTDataSource {
   constructor() {
     super();
-    this.baseURL = 'http://api.openweathermap.org/data/2.5/weather?q=chennai&appid=36e7bbbb4ce89be60781903189fcc5f1';
+    this.baseURL = 'http://api.openweathermap.org/data/2.5/';
   }
 
-  async getClimate() {
-    //return this.get(`weather?q=${cityname}&appid=36e7bbbb4ce89be60781903189fcc5f1`);
-    //const response = await this.get(`http://api.openweathermap.org/data/2.5/weather?q=chennai&appid=36e7bbbb4ce89be60781903189fcc5f1`);
-    const data = await this.get(``);
+  async getClimate(cityName) {
+    const data = await this.get(`weather?q=${cityName}&appid=${process.env.WEATHER_API_KEY}`);
     return data;
   }
 

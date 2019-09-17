@@ -50,7 +50,7 @@ const typeDefs = gql`
   type Query {
     getBooks: [Book]
     getAuthors: [Author]
-    getSimpleWeather: Weather
+    getSimpleWeather(cityName:String!): Weather
 
   }
   type Mutation {
@@ -64,10 +64,14 @@ const resolvers = {
     Query: {
         getBooks: () => booksList,
         getAuthors: () => authorsList,
-        getSimpleWeather: async () => {
-            const response = await fetch(`http://api.openweathermap.org/data/2.5/weather?q=chennai&appid=36e7bbbb4ce89be60781903189fcc5f1`);
-            const data = await response.json();
-            return data;
+        // Using only fetch
+        // getSimpleWeather: async () => {
+        //     const response = await fetch(`http://api.openweathermap.org/data/2.5/weather?q=chennai&appid=36e7bbbb4ce89be60781903189fcc5f1`);
+        //     const data = await response.json();
+        //     return data;
+        // },
+        getSimpleWeather: async (_root, arg, { dataSources }) => {
+            return dataSources.WeatherAPI.getClimate(arg.cityName);
         },
     },
     Mutation: {
