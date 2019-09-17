@@ -1,4 +1,6 @@
 const { ApolloServer, gql } = require('apollo-server');
+const WeatherAPI = require('./restdatafetch');
+const fetch = require("node-fetch");
 
 //Dummy data
 const authorsList = [
@@ -38,10 +40,18 @@ const typeDefs = gql`
     books: [Book]
   }
 
+  type Weather{
+    timezone: String
+    id: String
+    name: String
+  }
+
   # The "Query" type is special
   type Query {
     getBooks: [Book]
     getAuthors: [Author]
+    getSimpleWeather: Weather
+
   }
   type Mutation {
       addBook(title: String, author: String): Book
@@ -54,6 +64,11 @@ const resolvers = {
     Query: {
         getBooks: () => booksList,
         getAuthors: () => authorsList,
+        getSimpleWeather: async () => {
+            const response = await fetch(`http://api.openweathermap.org/data/2.5/weather?q=chennai&appid=36e7bbbb4ce89be60781903189fcc5f1`);
+            const data = await response.json();
+            return data;
+        },
     },
     Mutation: {
         addBook: (root, arg) => {
@@ -69,7 +84,21 @@ const resolvers = {
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
-const server = new ApolloServer({ typeDefs, resolvers });
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    dataSources: () => {
+        return {
+            WeatherAPI: new WeatherAPI(),
+            //personalizationAPI: new PersonalizationAPI(),
+        };
+    },
+    context: () => {
+        return {
+            token: 'foo',
+        };
+    },
+});
 // The `listen` method launches a web server.
 server.listen().then(({ url }) => {
     console.log(`Server ready at ${url}`);
