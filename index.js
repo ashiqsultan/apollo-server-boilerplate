@@ -43,7 +43,9 @@ const typeDefs = gql`
     getBooks: [Book]
     getAuthors: [Author]
   }
-  type Mutation {addBook(title: String, author: String): Book}
+  type Mutation {
+      addBook(title: String, author: String): Book
+      }
 `;
 
 // Resolvers define the technique for fetching the types defined in the
@@ -53,8 +55,15 @@ const resolvers = {
         getBooks: () => booksList,
         getAuthors: () => authorsList,
     },
-    Mutation:{
-        addBook:()=>booksList.push(arg)
+    Mutation: {
+        addBook: (root, arg) => {
+            booksList.push({
+                title: arg.title,
+                author: arg.author,
+            })
+            console.log(arg.title);
+            console.log(booksList)
+        }
     },
 };
 
