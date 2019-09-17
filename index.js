@@ -32,7 +32,7 @@ const typeDefs = gql`
   # clients can execute, along with the return type for each. In this
   # case, the "books" query returns an array of zero or more Books (defined above).
   type Query {
-    getbooks: [Book]
+    getbooks: [Book] #the name getbooks should be same both here and in Resolvers
   }
 `;
 
@@ -40,7 +40,7 @@ const typeDefs = gql`
 // schema. This resolver retrieves books from the "books" array above.
 const resolvers = {
     Query: {
-        getbooks: () => booksList,
+        getbooks: () => booksList, //the name getbooks should be same both here and in TypeDef Query or Mutations or Subscriptions
     },
 };
 
