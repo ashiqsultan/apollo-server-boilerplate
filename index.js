@@ -1,16 +1,24 @@
 const { ApolloServer, gql } = require('apollo-server');
 
 //Dummy data
+const authorsList = [
+    {
+        name: 'ashiq'
+    },
+    {
+        name: 'fayaz'
+    }
+];
 const booksList = [
     {
         title: 'Harry Potter and the Chamber of Secrets',
-        author: 'J.K. Rowling',
-        published:'1995',
+        author: authorsList[0],
+        published: '1995',
     },
     {
         title: 'Jurassic Park',
-        author: 'Michael Crichton',
-        published:'2000',
+        author: authorsList[1],
+        published: '2000',
     },
 ];
 
@@ -19,35 +27,40 @@ const booksList = [
 // your data.
 const typeDefs = gql`
   # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
   # This "Book" type defines the queryable fields for every book in our data source.
   type Book {
     title: String
-    author: String
-    published:String
-    nameofauthor:String #this will return null because there is no data
+    author: Author
+  }
+  
+  type Author {
+    name: String
+    books: [Book]
   }
 
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
+  # The "Query" type is special
   type Query {
-    getbooks: [Book] #the name getbooks should be same both here and in Resolvers
+    getBooks: [Book]
+    getAuthors: [Author]
   }
+  type Mutation {addBook(title: String, author: String): Book}
 `;
 
 // Resolvers define the technique for fetching the types defined in the
 // schema. This resolver retrieves books from the "books" array above.
 const resolvers = {
     Query: {
-        getbooks: () => booksList, //the name getbooks should be same both here and in TypeDef Query or Mutations or Subscriptions
+        getBooks: () => booksList,
+        getAuthors: () => authorsList,
+    },
+    Mutation:{
+        addBook:()=>booksList.push(arg)
     },
 };
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
 const server = new ApolloServer({ typeDefs, resolvers });
-
 // The `listen` method launches a web server.
 server.listen().then(({ url }) => {
     console.log(`Server ready at ${url}`);
