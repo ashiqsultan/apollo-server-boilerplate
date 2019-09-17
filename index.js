@@ -1,6 +1,8 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql, PubSub } = require('apollo-server');
 const WeatherAPI = require('./restdatafetch');
 const fetch = require("node-fetch");
+
+const pubsub = new PubSub();
 
 //Dummy data
 const authorsList = [
@@ -30,37 +32,57 @@ const booksList = [
 const typeDefs = gql`
   # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
   # This "Book" type defines the queryable fields for every book in our data source.
-  type Book {
-    title: String
-    author: Author
-  }
-  
-  type Author {
-    name: String
-    books: [Book]
-  }
+    type Book {
+        title: String
+        author: Author
+    }
 
-  type Weather{
-    timezone: String
-    id: String
-    name: String
-  }
+    type Author {
+        name: String
+        books: [Book]
+    }
 
-  # The "Query" type is special
-  type Query {
-    getBooks: [Book]
-    getAuthors: [Author]
-    getSimpleWeather(cityName:String!): Weather
+    type Weather{
+        timezone: String
+        id: String
+        name: String
+    }
+    #Subscriptions demo
+    type Post {
+        author: String
+        comment: String
+    }
 
-  }
-  type Mutation {
-      addBook(title: String, author: String): Book
-      }
+    # The "Query" type is special
+    type Query {
+        getBooks: [Book]
+        getAuthors: [Author]
+        getSimpleWeather(cityName:String!): Weather
+        posts: [Post]
+        getPost:[Post]
+    }
+
+    type Mutation {
+        addBook(title: String, author: String): Book
+        addPost(author: String, comment: String): Post
+    }
+
+    type Subscription {
+        postAdded: Post
+    }
 `;
 
 // Resolvers define the technique for fetching the types defined in the
 // schema. This resolver retrieves books from the "books" array above.
+const POST_ADDED = 'POST_ADDED'; // name of a async iterator
 const resolvers = {
+    Subscription: {
+        postAdded: {
+            //We are creating an Async Iterator
+            // Additional event labels can be passed to asyncIterator creation
+            subscribe: () => pubsub.asyncIterator([POST_ADDED]),
+        },
+    },
     Query: {
         getBooks: () => booksList,
         getAuthors: () => authorsList,
@@ -73,6 +95,9 @@ const resolvers = {
         getSimpleWeather: async (_root, arg, { dataSources }) => {
             return dataSources.WeatherAPI.getClimate(arg.cityName);
         },
+        posts(root, args, context) {
+            return postController.posts();
+        },
     },
     Mutation: {
         addBook: (root, arg) => {
@@ -82,7 +107,11 @@ const resolvers = {
             })
             console.log(arg.title);
             console.log(booksList)
-        }
+        },
+        addPost(root, args, context) {
+            pubsub.publish(POST_ADDED, { postAdded: args });
+            return postController.addPost(args);
+        },
     },
 };
 
@@ -91,6 +120,21 @@ const resolvers = {
 const server = new ApolloServer({
     typeDefs,
     resolvers,
+    subscriptions: {
+        // onConnect: (connectionParams, webSocket) => {
+        //     if (connectionParams.authToken) {
+        //         return validateToken(connectionParams.authToken)
+        //             .then(findUser(connectionParams.authToken))
+        //             .then(user => {
+        //                 return {
+        //                     currentUser: user,
+        //                 };
+        //             });
+        //     }
+
+        //     throw new Error('Missing auth token!');
+        // },
+    },
     dataSources: () => {
         return {
             WeatherAPI: new WeatherAPI(),
@@ -104,6 +148,7 @@ const server = new ApolloServer({
     },
 });
 // The `listen` method launches a web server.
-server.listen().then(({ url }) => {
+server.listen().then(({ url, subscriptionsUrl }) => {
     console.log(`Server ready at ${url}`);
+    console.log(`🚀 Subscriptions ready at ${subscriptionsUrl}`);
 });
